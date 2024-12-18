@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-top: 10px;
+            font-size: 16px;
+        }
+        input, select, button {
+            padding: 8px;
+            font-size: 16px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        button {
+            margin-top: 20px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .bill-output {
+            margin-top: 20px;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .bill-output p {
+            margin: 5px 0;
+        }
+        .item-container {
+            margin-top: 10px;
+        }
+        .item-container .item {
+            margin-bottom: 10px;
+        }
+        .item-container button {
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Bill Generator</h1>
+
+    <div class="container">
+        <form id="billForm">
+            <label for="storeName">Store Name:</label>
+            <input type="text" id="storeName" name="storeName" required><br>
+
+            <label for="customerName">Store Phone Number :</label>
+            <input type="text" id="StorePhone" name="StorePhone" required><br>
+
+            <label for="gstNumber">GST Number:</label>
+            <input type="text" id="gstNumber" name="gstNumber" required><br>
+
+            <label for="customerName">Customer Name:</label>
+            <input type="text" id="customerName" name="customerName" required><br>
+
+            <label for="customerPhone">Customer Phone Number:</label>
+            <input type="text" id="customerPhone" name="customerPhone" required><br>
+
+            <div id="itemsSection" class="item-container">
+                <div class="item">
+                    <label for="itemName1">Item Name:</label>
+                    <input type="text" id="itemName1" name="itemName1" required>
+
+                    <label for="quantity1">Quantity:</label>
+                    <input type="number" id="quantity1" name="quantity1" required>
+
+                    <label for="rate1">Rate:</label>
+                    <input type="number" id="rate1" name="rate1" required>
+
+                    <label for="gst1">GST Rate (%):</label>
+                    <input type="number" id="gst1" name="gst1" required>
+
+                    <label for="discount1">Discount (%):</label>
+                    <input type="number" id="discount1" name="discount1">
+
+                    <button type="button" onclick="removeItem(1)">Remove Item</button>
+                </div>
+            </div>
+
+            <button type="button" id="addItemButton">Add Another Item</button><br><br>
+
+            <label for="paymentMode">Payment Mode:</label>
+            <select id="paymentMode" name="paymentMode">
+                <option value="cash">Cash</option>
+                <option value="card">Card</option>
+                <option value="upi">UPI</option>
+            </select><br><br>
+
+            <button type="submit">Generate Bill</button>
+        </form>
+
+        <div id="billOutput" class="bill-output"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.21/jspdf.plugin.autotable.min.js"></script>
+    
+    <script>
+        const items = [];
+        let itemIndex = 1;
+    
+        document.getElementById("addItemButton").addEventListener("click", function() {
+            itemIndex++;
+            addNewItem(itemIndex);
+        });
+    
+        function addNewItem(index) {
+            const itemContainer = document.getElementById("itemsSection");
+    
+            const itemDiv = document.createElement('div');
+            itemDiv.classList.add('item');
+            itemDiv.id = 'item' + index;
+    
+            itemDiv.innerHTML = `
+                <label for="itemName${index}">Item Name:</label>
+                <input type="text" id="itemName${index}" name="itemName${index}" required>
+                
+                <label for="quantity${index}">Quantity:</label>
+                <input type="number" id="quantity${index}" name="quantity${index}" required>
+                
+                <label for="rate${index}">Rate:</label>
+                <input type="number" id="rate${index}" name="rate${index}" required>
+                
+                <label for="gst${index}">GST Rate (%):</label>
+                <input type="number" id="gst${index}" name="gst${index}" required>
+                
+                <label for="discount${index}">Discount (%):</label>
+                <input type="number" id="discount${index}" name="discount${index}">
+                
+                <button type="button" onclick="removeItem(${index})">Remove Item</button>
+            `;
+    
+            itemContainer.appendChild(itemDiv);
+        }
+    
+        function removeItem(index) {
+            const itemToRemove = document.getElementById('item' + index);
+            itemToRemove.remove();
+        }
+    
+        document.getElementById("billForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+    
+            const storeName = document.getElementById("storeName").value;
+            const StorePhone = document.getElementById("StorePhone").value;
+            const gstNumber = document.getElementById("gstNumber").value;
+            const customerName = document.getElementById("customerName").value;
+            const customerPhone = document.getElementById("customerPhone").value;
+            const paymentMode = document.getElementById("paymentMode").value;
+    
+            const currentDate = new Date().toLocaleString();
+    
+            const itemsData = [];
+            let totalAmount = 0, gstAmount = 0, discountAmount = 0;
+    
+            for (let i = 1; i <= itemIndex; i++) {
+                const itemName = document.getElementById("itemName" + i).value;
+                const quantity = parseInt(document.getElementById("quantity" + i).value);
+                const rate = parseFloat(document.getElementById("rate" + i).value);
+                const gst = parseFloat(document.getElementById("gst" + i).value);
+                const discount = parseFloat(document.getElementById("discount" + i).value) || 0;
+    
+                const totalItemAmount = quantity * rate;
+                const gstAmt = (totalItemAmount * gst) / 100;
+                const discountAmt = (totalItemAmount * discount) / 100;
+                const finalAmount = totalItemAmount + gstAmt - discountAmt;
+    
+                itemsData.push({ itemName, quantity, rate, totalAmount: totalItemAmount, gstAmount: gstAmt, discountAmount: discountAmt, finalAmount });
+    
+                totalAmount += totalItemAmount;
+                gstAmount += gstAmt;
+                discountAmount += discountAmt;
+            }
+    
+            const finalBillAmount = totalAmount + gstAmount - discountAmount;
+    
+            displayBill({ storeName, StorePhone, gstNumber, customerName, customerPhone, paymentMode, currentDate, itemsData, totalAmount, gstAmount, discountAmount, finalBillAmount });
+        });
+    
+        function displayBill({ storeName, StorePhone, gstNumber, customerName, customerPhone, paymentMode, currentDate, itemsData, totalAmount, gstAmount, discountAmount, finalBillAmount }) {
+            let billHtml = `
+                <h3>Bill</h3>
+                <p><strong>Store Name:</strong> ${storeName}</p>
+                <p><strong>Store Phone:</strong> ${StorePhone}</p>
+                <p><strong>GST Number:</strong> ${gstNumber}</p>
+                <p><strong>Customer Name:</strong> ${customerName}</p>
+                <p><strong>Customer Phone:</strong> ${customerPhone}</p>
+                <p><strong>Date:</strong> ${currentDate}</p>
+                <p><strong>Payment Mode:</strong> ${paymentMode}</p>
+                <table>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Quantity</th>
+                        <th>Rate</th>
+                        <th>GST</th>
+                        <th>Discount</th>
+                        <th>Final Amount</th>
+                    </tr>`;
+    
+            itemsData.forEach(item => {
+                billHtml += `
+                    <tr>
+                        <td>${item.itemName}</td>
+                        <td>${item.quantity}</td>
+                        <td>${item.rate}</td>
+                        <td>${item.gstAmount}</td>
+                        <td>${item.discountAmount}</td>
+                        <td>${item.finalAmount}</td>
+                    </tr>`;
+            });
+    
+            billHtml += `
+                </table>
+                <p><strong>Total Amount:</strong> ${totalAmount}</p>
+                <p><strong>Total GST:</strong> ${gstAmount}</p>
+                <p><strong>Total Discount:</strong> ${discountAmount}</p>
+                <p><strong>Final Bill Amount:</strong> ${finalBillAmount}</p>
+                <button onclick="downloadBill()">Download Bill</button>
+            `;
+    
+            document.getElementById("billOutput").innerHTML = billHtml;
+        }
+    
+        function downloadBill() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+    
+            const margin = 10;
+            const pageWidth = doc.internal.pageSize.width - margin * 2;
+            let y = margin;
+    
+            doc.setFontSize(16);
+            doc.text('Bill', pageWidth / 2, y, { align: 'center' });
+            y += 10;
+    
+            doc.setFontSize(12);
+            doc.text(`Store Name: ${document.getElementById('storeName').value}`, margin, y);
+            y += 7;
+            doc.text(`Store Phone: ${document.getElementById('StorePhone').value}`, margin, y);
+            y += 7;
+            doc.text(`GST Number: ${document.getElementById('gstNumber').value}`, margin, y);
+            y += 7;
+            doc.text(`Customer Name: ${document.getElementById('customerName').value}`, margin, y);
+            y += 7;
+            doc.text(`Customer Phone: ${document.getElementById('customerPhone').value}`, margin, y);
+            y += 7;
+    
+            doc.text(`Date: ${new Date().toLocaleString()}`, margin, y);
+            y += 7;
+            doc.text(`Payment Mode: ${document.getElementById('paymentMode').value}`, margin, y);
+            y += 10;
+    
+            const headers = [['Item Name', 'Quantity', 'Rate', 'GST', 'Discount', 'Amount']];
+            const rows = [];
+    
+            let totalAmount = 0;
+            let gstAmount = 0;
+            let discountAmount = 0;
+    
+            for (let i = 1; i <= itemIndex; i++) {
+                const itemName = document.getElementById("itemName" + i).value;
+                const quantity = parseInt(document.getElementById("quantity" + i).value);
+                const rate = parseFloat(document.getElementById("rate" + i).value);
+                const gst = parseFloat(document.getElementById("gst" + i).value);
+                const discount = parseFloat(document.getElementById("discount" + i).value) || 0;
+    
+                const totalItemAmount = quantity * rate;
+                const gstAmt = (totalItemAmount * gst) / 100;
+                const discountAmt = (totalItemAmount * discount) / 100;
+                const finalAmount = totalItemAmount + gstAmt - discountAmt;
+    
+                totalAmount += totalItemAmount;
+                gstAmount += gstAmt;
+                discountAmount += discountAmt;
+    
+                rows.push([itemName, quantity, rate.toFixed(2), gstAmt.toFixed(2), discountAmt.toFixed(2), finalAmount.toFixed(2)]);
+            }
+    
+            doc.autoTable({
+                startY: y,
+                head: headers,
+                body: rows,
+                theme: 'grid',
+                styles: {
+                    halign: 'center',
+                    cellPadding: 3
+                },
+                margin: { top: 10, left: 10, right: 10 }
+            });
+    
+            let finalY = doc.autoTable.previous.finalY + 10;
+    
+            doc.setFontSize(12);
+            doc.text(`Total Amount: ${totalAmount.toFixed(2)}`, margin, finalY);
+            finalY += 7;
+            doc.text(`GST Amount: ${gstAmount.toFixed(2)}`, margin, finalY);
+            finalY += 7;
+            doc.text(`Discount Amount: ${discountAmount.toFixed(2)}`, margin, finalY);
+            finalY += 7;
+            doc.text(`Final Bill Amount: ${(totalAmount + gstAmount - discountAmount).toFixed(2)}`, margin, finalY);
+    
+            doc.save('bill.pdf');
+        }
+    </script>
+    
+
+</body>
+</html>
