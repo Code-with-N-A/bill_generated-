@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Responsive Table with Dynamic Columns, Discount, GST, and PDF Export</title>
+    <title> Bill Generate with Dynamic Columns, Discount, GST, and PDF Export</title>
     <!-- jsPDF Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- jsPDF AutoTable plugin -->
@@ -74,32 +74,37 @@
                 padding: 6px 10px;
             }
         }
+        .first{
+           display: grid;
+            margin-top:30px ;
+        }
     </style>
 </head>
 <body>
+    <h1 style="text-align: center; color:rgb(13, 17, 125);">bill Generate</h1>
     
 
     <!-- Input fields for Dukaan Name, Phone Number, Address, Bill Name, Discount, and GST -->
-    <div>
+    <div class="first">
         <label for="shopName">Dukaan Name: </label>
-        <input type="text" id="shopName" placeholder="Enter Dukaan Name">
+        <input type="text" id="shopName" placeholder="Enter Dukaan Name"><br><br>
         
         <label for="phoneNumber">Phone Number: </label>
-        <input type="text" id="phoneNumber" placeholder="Enter Phone Number">
+        <input type="text" id="phoneNumber" placeholder="Enter Phone Number"><br><br>
         
         <label for="address">Address: </label>
-        <input type="text" id="address" placeholder="Enter Address">
+        <input type="text" id="address" placeholder="Enter Address"><br><br>
         
         <label for="billName">Bill Name: </label>
-        <input type="text" id="billName" placeholder="Enter Bill Name">
+        <input type="text" id="billName" placeholder="Enter Bill Name"><br><br>
         
         <label for="discount">Discount (%): </label>
-        <input type="number" id="discount" value="0">
+        <input type="number" id="discount" value="0"><br><br>
         
         <label for="gst">GST (%): </label>
-        <input type="number" id="gst" value="0">
+        <input type="number" id="gst" value="0"><br><br>
         
-        <button onclick="calculateTotal()">Calculate Total</button>
+       
     </div>
 
     <!-- Table Container to make the table scrollable -->
@@ -108,7 +113,7 @@
         <table id="invoiceTable">
             <thead id="tableHead">
                 <tr>
-                    <th>Row</th>
+                    <th>NO.</th>
                     <th>Item</th>
                     <th>Price</th>
                     <th>Quantity</th>
@@ -131,12 +136,13 @@
     </div>
 
     <!-- Button to download PDF -->
+    <button onclick="calculateTotal()">Calculate Total</button>
     <button onclick="downloadPDF()">Download PDF</button>
     <button><a href="normlexl.html">Excel</a></button>
 
     <script>
         // Store column headers dynamically
-        let dynamicHeaders = ['Row', 'Item', 'Price', 'Quantity', 'Total'];
+        let dynamicHeaders = ['NO.', 'Item', 'Price', 'Quantity', 'Total'];
 
         // Function to add a new column with heading
         function addColumn() {
