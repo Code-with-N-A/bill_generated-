@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Table Excel with Download Option</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding-top: 20px;
+        }
+        .table-container {
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #000;
+        }
+        th, td {
+            padding: 8px;
+            text-align: center;
+        }
+        input[type="number"], input[type="text"] {
+            padding: 5px;
+            width: 100%;
+        }
+        button {
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+    <!-- Include jsPDF and jsPDF autoTable plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.21/jspdf.plugin.autotable.min.js"></script>
+    <!-- Include SheetJS (for Excel download) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <h2>Create a Dynamic Table with Custom Column Names</h2>
+    
+    <!-- Inputs for main heading, mini heading, rows, and columns -->
+    <div>
+        <label for="main-heading">Main Heading: </label>
+        <input type="text" id="main-heading" placeholder="Enter main heading">
+    </div>
+    <div>
+        <label for="mini-heading">Mini Heading: </label>
+        <input type="text" id="mini-heading" placeholder="Enter mini heading">
+    </div>
+    <div>
+        <label for="rows">Number of Rows: </label>
+        <input type="number" id="rows" placeholder="Enter number of rows">
+    </div>
+    <div>
+        <label for="cols">Number of Columns: </label>
+        <input type="number" id="cols" placeholder="Enter number of columns">
+    </div>
+    <div>
+        <label for="heading">Table Heading: </label>
+        <input type="text" id="heading" placeholder="Enter table heading">
+    </div>
+    
+    <div id="column-names-container"></div>
+    
+    <button onclick="generateTable()">Generate Table</button>
+    <button onclick="downloadTable()">Download Table</button>
+
+    <div class="table-container" id="table-container"></div>
+</div>
+
+<script>
+    // Function to generate the column name input fields dynamically
+    function generateColumnInputs() {
+        const cols = document.getElementById("cols").value;
+        const columnNamesContainer = document.getElementById("column-names-container");
+        columnNamesContainer.innerHTML = ''; // Clear previous column name inputs
+
+        for (let i = 1; i <= cols; i++) {
+            const inputField = document.createElement("div");
+            inputField.innerHTML = `
+                <label for="col${i}">Column ${i} Name: </label>
+                <input type="text" id="col${i}" placeholder="Enter name for Column ${i}">
+            `;
+            columnNamesContainer.appendChild(inputField);
+        }
+    }
+
+    // Function to generate the table with custom column names
+    function generateTable() {
+        const rows = document.getElementById("rows").value;
+        const cols = document.getElementById("cols").value;
+        const heading = document.getElementById("heading").value;
+
+        if (rows && cols && heading) {
+            // Get custom column names
+            let columnNames = [];
+            for (let i = 1; i <= cols; i++) {
+                const colName = document.getElementById(`col${i}`).value || `Column ${i}`;
+                columnNames.push(colName);
+            }
+
+            // Create table element
+            let table = document.createElement("table");
+            let thead = table.createTHead();
+            let tbody = table.createTBody();
+
+            // Add heading row
+            let headerRow = thead.insertRow();
+            headerRow.insertCell().innerText = heading;
+            for (let i = 0; i < cols; i++) {
+                headerRow.insertCell().innerText = columnNames[i];
+            }
+
+            // Add data rows
+            for (let i = 0; i < rows; i++) {
+                let row = tbody.insertRow();
+                row.insertCell().innerText = ` ${i+1}`;
+                for (let j = 0; j < cols; j++) {
+                    let cell = row.insertCell();
+                    let input = document.createElement("input");
+                    input.type = "text";
+                    input.placeholder = `Enter value`;
+                    cell.appendChild(input);
+                }
+            }
+
+            // Append the table to the container
+            const tableContainer = document.getElementById("table-container");
+            tableContainer.innerHTML = ''; // Clear previous table
+            tableContainer.appendChild(table);
+        } else {
+            alert("Please enter valid number of rows, columns, and heading!");
+        }
+    }
+
+    // Function to download the table in selected format (PDF or Excel)
+    function downloadTable() {
+        const format = prompt("Do you want to download as PDF or Excel? Type 'PDF' or 'Excel'").toLowerCase();
+
+        if (format === "pdf") {
+            downloadPDF();
+        } else if (format === "excel") {
+            downloadExcel();
+        } else {
+            alert("Invalid choice! Please enter 'PDF' or 'Excel'.");
+        }
+    }
+
+    // Function to download the table as PDF
+    function downloadPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const mainHeading = document.getElementById("main-heading").value;
+        const miniHeading = document.getElementById("mini-heading").value;
+        
+        // Add main heading and mini heading to PDF (centered)
+        doc.setFontSize(20);
+        doc.text(mainHeading, 105, 20, null, null, "center");  // Main heading centered
+        doc.setFontSize(14);
+        doc.text(miniHeading, 105, 30, null, null, "center");  // Mini heading centered
+
+        const table = document.getElementById("table-container").querySelector("table");
+
+        if (table) {
+            const rows = table.rows;
+            let tableData = [];
+
+            // Get table data (for PDF)
+            for (let i = 0; i < rows.length; i++) {
+                let rowData = [];
+                let cells = rows[i].cells;
+
+                // Fetching input values from table cells
+                for (let j = 0; j < cells.length; j++) {
+                    let cellValue = cells[j].innerText;
+                    // If the cell has an input field, we grab the value from it
+                    if (cells[j].querySelector('input')) {
+                        cellValue = cells[j].querySelector('input').value;
+                    }
+                    rowData.push(cellValue);
+                }
+                tableData.push(rowData);
+            }
+
+            // Add table to PDF
+            doc.autoTable({
+                head: [tableData[0]], // Heading row
+                body: tableData.slice(1), // Data rows
+                startY: 40, // Start the table from below the headings
+            });
+
+            // Save the PDF
+            doc.save("dynamic_table.pdf");
+        } else {
+            alert("Please generate a table first!");
+        }
+    }
+
+    // Function to download the table as Excel
+    function downloadExcel() {
+        const table = document.getElementById("table-container").querySelector("table");
+
+        if (table) {
+            // Create a workbook and add the table data
+            let wb = XLSX.utils.book_new();
+            let ws_data = [];
+
+            const mainHeading = document.getElementById("main-heading").value;
+            const miniHeading = document.getElementById("mini-heading").value;
+            
+            // Add main heading and mini heading as rows
+            ws_data.push([mainHeading]);
+            ws_data.push([miniHeading]);
+
+            const tableRows = table.rows;
+
+            // Loop through rows and cells to extract data
+            for (let i = 0; i < tableRows.length; i++) {
+                let rowData = [];
+                for (let j = 0; j < tableRows[i].cells.length; j++) {
+                    const cell = tableRows[i].cells[j];
+                    if (cell.querySelector('input')) {
+                        rowData.push(cell.querySelector('input').value); // For input cells
+                    } else {
+                        rowData.push(cell.innerText); // For non-input cells
+                    }
+                }
+                ws_data.push(rowData);
+            }
+
+            // Create the worksheet
+            let ws = XLSX.utils.aoa_to_sheet(ws_data);
+
+            // Append the worksheet to the workbook
+            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+
+            // Download the Excel file
+            XLSX.writeFile(wb, "dynamic_table.xlsx");
+        } else {
+            alert("Please generate a table first!");
+        }
+    }
+
+    // Add event listener to columns input to update column name fields
+    document.getElementById("cols").addEventListener("input", generateColumnInputs);
+</script>
+
+</body>
+</html>

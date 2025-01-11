@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Table with Dynamic Columns, Discount, GST, and PDF Export</title>
+    <!-- jsPDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- jsPDF AutoTable plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.26/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        /* Basic styles for the table and other elements */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid black;  /* Black border for table cells */
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        /* Responsiveness and scroll */
+        .table-container {
+            overflow-x: auto;  /* Allow horizontal scrolling */
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling for iOS */
+        }
+
+        button {
+            margin-top: 10px;
+        }
+
+        /* Media Queries for responsiveness */
+        @media (max-width: 768px) {
+            th, td {
+                padding: 6px;
+                font-size: 12px;
+            }
+
+            input[type="text"], input[type="number"] {
+                font-size: 12px;
+                padding: 5px;
+            }
+
+            button {
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+
+            .table-container {
+                padding-bottom: 20px;  /* Space for horizontal scroll bar */
+            }
+        }
+
+        @media (max-width: 480px) {
+            th, td {
+                padding: 4px;
+                font-size: 10px;
+            }
+
+            input[type="text"], input[type="number"] {
+                font-size: 10px;
+                padding: 4px;
+            }
+
+            button {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+
+    <!-- Input fields for Dukaan Name, Phone Number, Address, Bill Name, Discount, and GST -->
+    <div>
+        <label for="shopName">Dukaan Name: </label>
+        <input type="text" id="shopName" placeholder="Enter Dukaan Name">
+        
+        <label for="phoneNumber">Phone Number: </label>
+        <input type="text" id="phoneNumber" placeholder="Enter Phone Number">
+        
+        <label for="address">Address: </label>
+        <input type="text" id="address" placeholder="Enter Address">
+        
+        <label for="billName">Bill Name: </label>
+        <input type="text" id="billName" placeholder="Enter Bill Name">
+        
+        <label for="discount">Discount (%): </label>
+        <input type="number" id="discount" value="0">
+        
+        <label for="gst">GST (%): </label>
+        <input type="number" id="gst" value="0">
+        
+        <button onclick="calculateTotal()">Calculate Total</button>
+    </div>
+
+    <!-- Table Container to make the table scrollable -->
+    <div class="table-container">
+        <!-- Table for Items -->
+        <table id="invoiceTable">
+            <thead id="tableHead">
+                <tr>
+                    <th>Row</th>
+                    <th>Item</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Rows will be added here dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Add Row and Column buttons -->
+    <button onclick="addRow()">Add Row</button>
+    <button onclick="addColumn()">Add Column</button>
+    
+    <!-- Grand Total display -->
+    <div>
+        <p id="grandTotal">Grand Total: 0</p>
+    </div>
+
+    <!-- Button to download PDF -->
+    <button onclick="downloadPDF()">Download PDF</button>
+    <button><a href="normlexl.html">Excel</a></button>
+
+    <script>
+        // Store column headers dynamically
+        let dynamicHeaders = ['Row', 'Item', 'Price', 'Quantity', 'Total'];
+
+        // Function to add a new column with heading
+        function addColumn() {
+            let columnName = prompt("Enter column name:");
+            if (columnName !== '') {
+                // Add new column to table head (same row as other headings)
+                let th = document.createElement("th");
+                th.textContent = columnName;
+                document.getElementById("tableHead").rows[0].appendChild(th); // Append to the same row
+
+                // Add input field for new column to each row in tbody
+                let rows = document.getElementById("tableBody").rows;
+                for (let i = 0; i < rows.length; i++) {
+                    let td = document.createElement("td");
+                    let input = document.createElement("input");
+                    input.type = "text";  // You can change input type as needed
+                    td.appendChild(input);
+                    rows[i].appendChild(td);
+                }
+
+                // Add the new column name to dynamicHeaders for PDF export
+                dynamicHeaders.push(columnName);
+            } else {
+                alert("Please enter a column name");
+            }
+        }
+
+        // Function to add a new row
+        function addRow() {
+            let tableBody = document.getElementById("tableBody");
+            let row = document.createElement("tr");
+
+            // Add Row Number
+            let rowNumberCell = document.createElement("td");
+            rowNumberCell.textContent = tableBody.rows.length + 1;  // Automatically increment row number
+            row.appendChild(rowNumberCell);
+
+            // Add default columns (Item, Price, Quantity, Total)
+            let itemCell = document.createElement("td");
+            let itemInput = document.createElement("input");
+            itemInput.type = "text";
+            itemCell.appendChild(itemInput);
+            row.appendChild(itemCell);
+
+            let priceCell = document.createElement("td");
+            let priceInput = document.createElement("input");
+            priceInput.type = "number";
+            priceCell.appendChild(priceInput);
+            row.appendChild(priceCell);
+
+            let quantityCell = document.createElement("td");
+            let quantityInput = document.createElement("input");
+            quantityInput.type = "number";
+            quantityCell.appendChild(quantityInput);
+            row.appendChild(quantityCell);
+
+            let totalCell = document.createElement("td");
+            let totalInput = document.createElement("input");
+            totalInput.type = "number";
+            totalInput.readOnly = true;
+            totalCell.appendChild(totalInput);
+            row.appendChild(totalCell);
+
+            // If any extra columns are added, add empty inputs for them (in the same row)
+            for (let i = 5; i < dynamicHeaders.length; i++) {
+                let extraCell = document.createElement("td");
+                let extraInput = document.createElement("input");
+                extraInput.type = "text";  // You can customize the input type as needed
+                extraCell.appendChild(extraInput);
+                row.appendChild(extraCell);
+            }
+
+            tableBody.appendChild(row);
+        }
+
+        // Function to calculate total for each row and grand total, including discount and GST
+        function calculateTotal() {
+            let rows = document.getElementById("tableBody").rows;
+            let grandTotal = 0;
+
+            for (let i = 0; i < rows.length; i++) {
+                let price = rows[i].cells[2].querySelector('input').value;
+                let quantity = rows[i].cells[3].querySelector('input').value;
+
+                let total = price * quantity;
+                rows[i].cells[4].querySelector('input').value = total;
+
+                grandTotal += total;
+            }
+
+            // Get discount and GST values from inputs
+            let discount = document.getElementById("discount").value;
+            let gst = document.getElementById("gst").value;
+
+            // Apply discount (percentage reduction)
+            if (discount > 0) {
+                grandTotal -= (grandTotal * discount) / 100;
+            }
+
+            // Apply GST (percentage increase)
+            if (gst > 0) {
+                grandTotal += (grandTotal * gst) / 100;
+            }
+
+            // Update grand total
+            document.getElementById("grandTotal").textContent = "Grand Total: " + grandTotal.toFixed(2);
+        }
+
+        // Function to download the table as a PDF with proper formatting
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Get Dukaan Name, Phone Number, Address, and Bill Name from the input fields
+            let shopName = document.getElementById("shopName").value;
+            let phoneNumber = document.getElementById("phoneNumber").value;
+            let address = document.getElementById("address").value;
+            let billName = document.getElementById("billName").value;
+
+            // Add shop details to PDF
+            doc.text(shopName, doc.internal.pageSize.width / 2, 20, null, null, 'center');
+            doc.text('Phone: ' + phoneNumber, doc.internal.pageSize.width / 2, 30, null, null, 'center');
+            doc.text('Address: ' + address, doc.internal.pageSize.width / 2, 40, null, null, 'center');
+            doc.text('Bill Name: ' + billName, doc.internal.pageSize.width / 2, 50, null, null, 'center');
+
+            // Add a small space before the table
+            doc.autoTable({
+                startY: 60,
+                head: [dynamicHeaders],  // Dynamic headers
+                body: Array.from(document.getElementById("tableBody").rows).map((row, index) => {
+                    let rowData = [index + 1];  // Add row number
+                    for (let i = 1; i < row.cells.length; i++) {
+                        rowData.push(row.cells[i].querySelector('input').value);  // Get each cell's value
+                    }
+                    return rowData;
+                }),
+                styles: { fontSize: 10, overflow: 'linebreak' }
+            });
+
+            // Add Discount, GST, and Grand Total at the bottom left
+            let discount = document.getElementById("discount").value;
+            let gst = document.getElementById("gst").value;
+            let grandTotal = parseFloat(document.getElementById("grandTotal").textContent.replace('Grand Total: ', ''));
+
+            doc.text('Discount: ' + discount + '%', 10, doc.lastAutoTable.finalY + 10);
+            doc.text('GST: ' + gst + '%', 10, doc.lastAutoTable.finalY + 20);
+            doc.text('Grand Total: ' + grandTotal.toFixed(2), 10, doc.lastAutoTable.finalY + 30);
+
+            // Add Date, Month, and Time
+            let currentDate = new Date();
+            let formattedDate = currentDate.toLocaleDateString('en-IN');
+            let formattedTime = currentDate.toLocaleTimeString('en-IN');
+            doc.text('Date: ' + formattedDate + ' Time: ' + formattedTime, 10, doc.lastAutoTable.finalY + 40);
+
+            // Save the generated PDF
+            doc.save('Invoice.pdf');
+        }
+    </script>
+
+</body>
+</html>
